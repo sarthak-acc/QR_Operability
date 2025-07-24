@@ -2,10 +2,10 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 resource "oci_objectstorage_bucket" "bucket_replica" {
-  for_each = { for k, v in (var.service_connectors_configuration.buckets != null ? var.service_connectors_configuration.buckets : {}) : k => v if v.replica_region != null }
+  for_each = { for k, v in(var.service_connectors_configuration.buckets != null ? var.service_connectors_configuration.buckets : {}) : k => v if v.replica_region != null }
   lifecycle {
     precondition {
-      condition = coalesce(each.value.cis_level,"1") == "2" ? (each.value.kms_key_ocid != null ? true : false) : true # false triggers this.
+      condition     = coalesce(each.value.cis_level, "1") == "2" ? (each.value.kms_key_ocid != null ? true : false) : true # false triggers this.
       error_message = "VALIDATION FAILURE (CIS Storage 4.1.2): A customer managed key is required when CIS level is set to 2."
     }
   }
@@ -16,11 +16,11 @@ resource "oci_objectstorage_bucket" "bucket_replica" {
   kms_key_id     = ""
   defined_tags   = each.value.defined_tags != null ? each.value.defined_tags : var.service_connectors_configuration.default_defined_tags
   freeform_tags  = merge(local.cislz_module_tag, each.value.freeform_tags != null ? each.value.defined_tags : var.service_connectors_configuration.default_freeform_tags)
-  storage_tier = each.value.storage_tier
+  storage_tier   = each.value.storage_tier
 }
 
 resource "oci_objectstorage_replication_policy" "these" {
-  for_each = { for k, v in (var.service_connectors_configuration.buckets != null ? var.service_connectors_configuration.buckets : {}) : k => v if v.replica_region != null }
+  for_each = { for k, v in(var.service_connectors_configuration.buckets != null ? var.service_connectors_configuration.buckets : {}) : k => v if v.replica_region != null }
 
   bucket                  = oci_objectstorage_bucket.these[each.key].name
   destination_bucket_name = oci_objectstorage_bucket.bucket_replica[each.key].name
