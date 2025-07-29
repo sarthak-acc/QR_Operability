@@ -10,7 +10,7 @@ variable "tenancy_ocid" {
 variable "logging_configuration" {
   description = "Logging configuration settings, defining all aspects to manage logging in OCI. Please see the comments within each attribute for details."
   type = object({
-    enable_cis_checks         = optional(bool,true), # Whether to enforce CIS benchmark and framework recommendations. Default is true.
+    enable_cis_checks         = optional(bool, true), # Whether to enforce CIS benchmark and framework recommendations. Default is true.
     default_compartment_id    = string,
     default_defined_tags      = optional(map(string)),
     default_freeform_tags     = optional(map(string)),
@@ -22,7 +22,7 @@ variable "logging_configuration" {
       description    = optional(string)
       freeform_tags  = optional(map(string))
       defined_tags   = optional(map(string))
-    })),{})
+    })), {})
     service_logs = optional(map(object({
       name               = string
       log_group_id       = string
@@ -30,30 +30,30 @@ variable "logging_configuration" {
       category           = string
       resource_id        = string
       is_enabled         = optional(bool)
-      retention_duration = optional(number,90)
+      retention_duration = optional(number, 90)
       defined_tags       = optional(map(string))
       freeform_tags      = optional(map(string))
-    })),{})
+    })), {})
     flow_logs = optional(map(object({
       name_prefix            = optional(string)
       log_group_id           = string
       target_resource_type   = string
       target_compartment_ids = list(string)
       is_enabled             = optional(bool)
-      retention_duration     = optional(number,90)
+      retention_duration     = optional(number, 90)
       defined_tags           = optional(map(string))
       freeform_tags          = optional(map(string))
-    })),{})
+    })), {})
     bucket_logs = optional(map(object({
       name_prefix            = optional(string)
       log_group_id           = string
       target_compartment_ids = list(string)
       category               = string
       is_enabled             = optional(bool)
-      retention_duration     = optional(number,90)
+      retention_duration     = optional(number, 90)
       defined_tags           = optional(map(string))
       freeform_tags          = optional(map(string))
-    })),{})
+    })), {})
     custom_logs = optional(map(object({
       name               = string
       compartment_id     = optional(string)
@@ -62,10 +62,10 @@ variable "logging_configuration" {
       parser_type        = optional(string)
       path               = list(string)
       is_enabled         = optional(bool)
-      retention_duration = optional(number,90)
+      retention_duration = optional(number, 90)
       defined_tags       = optional(map(string))
       freeform_tags      = optional(map(string))
-    })),{})
+    })), {})
   })
 }
 
@@ -81,8 +81,8 @@ variable "module_name" {
   default     = "logging"
 }
 
-variable compartments_dependency {
-  description = "A map of objects containing the externally managed compartments this module may depend on. All map objects must have the same type and must contain at least an 'id' attribute (representing the compartment OCID) of string type." 
+variable "compartments_dependency" {
+  description = "A map of objects containing the externally managed compartments this module may depend on. All map objects must have the same type and must contain at least an 'id' attribute (representing the compartment OCID) of string type."
   type = map(object({
     id = string
   }))
