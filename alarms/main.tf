@@ -6,7 +6,7 @@ locals {
   tenancy_root_key = "TENANCY-ROOT"
 
   subscriptions = flatten([
-        for topic_key, topic in(var.alarms_configuration["topics"] != null ? var.alarms_configuration["topics"] : {}) : [
+    for topic_key, topic in(var.alarms_configuration["topics"] != null ? var.alarms_configuration["topics"] : {}) : [
       for subs in(topic["subscriptions"] != null ? topic["subscriptions"] : []) : [
         for value in subs["values"] : {
           key = "${topic_key}.${value}"
