@@ -8,8 +8,8 @@ locals {
       conditions = ["com.oraclecloud.identitycontrolplane.createidentityprovider",
         "com.oraclecloud.identitycontrolplane.deleteidentityprovider",
         "com.oraclecloud.identitycontrolplane.updateidentityprovider",
-        "com.oraclecloud.identitycontrolplane.createidpgroupmapping",
-        "com.oraclecloud.identitycontrolplane.deleteidpgroupmapping",
+        "com.oraclecloud.identitycontrolplane.addidpgroupmapping",
+        "com.oraclecloud.identitycontrolplane.removeidpgroupmapping",
         "com.oraclecloud.identitycontrolplane.updateidpgroupmapping",
         "com.oraclecloud.identitycontrolplane.addusertogroup",
         "com.oraclecloud.identitycontrolplane.creategroup",
@@ -105,4 +105,4 @@ locals {
       "com.oraclecloud.cloudguard.problemremediated"]
     }
   }
-}    
+}
