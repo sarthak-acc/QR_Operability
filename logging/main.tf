@@ -16,8 +16,9 @@ resource "oci_log_analytics_log_analytics_log_group" "these" {
   display_name   = replace(each.value.name, "/\\s+/", "-")
   description    = each.value.description != null ? each.value.description : replace(each.value.name, "/\\s+/", "-")
   namespace      = data.oci_log_analytics_namespaces.logging_analytics_namespaces.namespace_collection[0].items[0].namespace
-
-  depends_on = [time_sleep.log_group_propagation_delay]
+  defined_tags   = each.value.defined_tags != null ? each.value.defined_tags : var.logging_configuration.default_defined_tags
+  freeform_tags  = merge(local.cislz_module_tag, each.value.freeform_tags != null ? each.value.freeform_tags : var.logging_configuration.default_freeform_tags)
+  depends_on     = [time_sleep.log_group_propagation_delay]
 }
 
 resource "oci_logging_log" "these" {
