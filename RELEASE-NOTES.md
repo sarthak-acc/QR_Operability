@@ -2,10 +2,12 @@
 
 ## Updates
 1. Format the code to adhere to Terraform standards.
-2. Fix *kms_key_id* bug in bucket-replication, 
-3. Add *kms_key_id_replica* to allow a kms key for bucket replica.
-4. Update idp event type from createidpgroupmapping, deleteidpgroupmapping to addidpgroupmapping,removeidpgroupmapping
-5. Add *defined_tags* and *freeform_tags* in logging.
+2. [Service Connectors module](./service-connectors/)
+    - Bug fix: Add *kms_key_id_replica* to allow a kms key for bucket replica in bucket replication.
+3. [Events module](./events/)
+    - Event *com.oraclecloud.identitycontrolplane.createidpgroupmapping* and *com.oraclecloud.identitycontrolplane.deleteidpgroupmapping* are updated to *com.oraclecloud.identitycontrolplane.addidpgroupmapping* and *com.oraclecloud.identitycontrolplane.removeidpgroupmapping* in IAM pre-configured events.
+4. [Logging module](./logging/)
+    - Add *defined_tags* and *freeform_tags* in logging.
 
    
 # April 28, 2025 Release Notes - 0.2.3
