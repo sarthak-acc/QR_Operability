@@ -5,7 +5,7 @@ resource "oci_objectstorage_bucket" "bucket_replica" {
   for_each = { for k, v in(var.service_connectors_configuration.buckets != null ? var.service_connectors_configuration.buckets : {}) : k => v if v.replica_region != null }
   lifecycle {
     precondition {
-      condition     = coalesce(each.value.cis_level, "1") == "2" ? (each.value.kms_key_ocid != null ? true : false) : true # false triggers this.
+      condition     = coalesce(each.value.cis_level, "1") == "2" ? (each.value.kms_key_id_replica != null ? true : false) : true # false triggers this.
       error_message = "VALIDATION FAILURE (CIS Storage 4.1.2): A customer managed key is required when CIS level is set to 2."
     }
   }
@@ -13,7 +13,7 @@ resource "oci_objectstorage_bucket" "bucket_replica" {
   compartment_id = each.value.compartment_id != null ? (length(regexall("^ocid1.*$", each.value.compartment_id)) > 0 ? each.value.compartment_id : var.compartments_dependency[each.value.compartment_id].id) : (length(regexall("^ocid1.*$", var.service_connectors_configuration.default_compartment_id)) > 0 ? var.service_connectors_configuration.default_compartment_id : var.compartments_dependency[var.service_connectors_configuration.default_compartment_id].id)
   name           = "${each.value.name}-replica"
   namespace      = data.oci_objectstorage_namespace.this[0].namespace
-  kms_key_id     = ""
+  kms_key_id     = each.value.kms_key_id_replica != null ? (length(regexall("^ocid1.*$", each.value.kms_key_id_replica)) > 0 ? each.value.kms_key_id_replica : var.kms_dependency[each.value.kms_key_id_replica].id) : null
   defined_tags   = each.value.defined_tags != null ? each.value.defined_tags : var.service_connectors_configuration.default_defined_tags
   freeform_tags  = merge(local.cislz_module_tag, each.value.freeform_tags != null ? each.value.defined_tags : var.service_connectors_configuration.default_freeform_tags)
   storage_tier   = each.value.storage_tier
