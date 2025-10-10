@@ -10,7 +10,7 @@ variable "private_key_password" { default = "" }
 
 variable "logging_configuration" {
   description = "Logging configuration settings, defining all aspects to manage logging in OCI. Please see the comments within each attribute for details."
-  type = any
+  type        = any
 }
 
 variable "compartments_dependency" {
