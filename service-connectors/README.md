@@ -87,7 +87,7 @@ Service connectors are created in "INACTIVE" state by default. Within the *servi
 
 #### Defining the Source
 Within the *service_connectors* attribute, use the *source* attribute to define the service connector source resources. Within *source*, the following attributes are supported.
-- **kind**: the type of source. Supported values are "logging" and "streaming".
+- **kind**: the type of source. Supported values are "logging", "streaming", and "monitoring".
 - **cursor_kind**: the type of cursor, which determines the starting point from which the stream will be consumed. Options "LATEST", "TRIM_HORIZON". Only applicable if *kind* = "streaming".
 - **audit_logs**: a list of objects where audit logs are expected to be found. Multiple audit log locations can be specified using the *cmp_id* attribute. Only applicable if *kind* is "logging".
     - **cmp_id**: the compartment where audit logs are expected to be found. For referring to all audit logs in the tenancy, provide the value "ALL". This attribute is overloaded: it can be either a compartment OCID, a reference (a key) to the compartment OCID, or the "ALL" value.
@@ -96,6 +96,11 @@ Within the *service_connectors* attribute, use the *source* attribute to define 
     - **log_group_id**: the log group where logs are expected to be found. It is an optional attribute. If not provided, all logs in *cmp_id* are included. This attribute is overloaded: it can be either a log group OCID or a reference (a key) to the log group OCID.
     - **log_id**: the log. It is an optional attribute. If not provided, all logs in *log_group_id* are included. This attribute is overloaded: it can be either a log OCID or a reference (a key) to the log OCID.
 - **stream_id**: the source stream. Only applicable if *kind* is "streaming". This attribute is overloaded: it can be either a stream OCID or a reference (a key) to the stream OCID.
+- **monitoring**: a list of objects of compartment-specific metric namespaces to retrieve data from. Required if *kind* = "streaming".
+    - **cmp_id**: the compartment where metric namespaces are expected to be found. This attribute is overloaded: it can be either a compartment OCID or a reference (a key) to the compartment OCID.
+    - **namespaces**: The namespaces you want to use for the monitoring source. 
+        - **metrics_kind**: the metrics query kind.
+        - **namespace**: The source service or application to use when querying for metric data points. Must begin with oci_. Example: oci_computeagent
 
 The following example defines a source that includes tenancy wide audit logs and logs other than audit logs from specific compartment and log group:
 ```
@@ -120,7 +125,7 @@ log_rule_filter = "data.vcnId='ocid1.vcn.oc1..amaaaa...mwq' AND data.region='us_
 
 #### Defining the Target
 Within the *service_connectors* attribute, use the *target* attribute to define the service connector target resource, i.e., where all source data gets aggregated into. Within *target*, the following attributes are supported:
-- **kind**: the type of target. Supported values are "objectstorage", "streaming", "functions", "logginganalytics", and "notifications".
+- **kind**: the type of target. Supported values are "objectstorage", "streaming", "functions", "logginganalytics", "notifications", and "monitoring".
 - **bucket_name**: the existing bucket name. Only applicable if kind is "objectstorage". This attribute is overloaded: it can be either a literal bucket name or a reference (a key) to the bucket name.
 - **bucket_batch_rollover_size_in_mbs**: the bucket batch rollover size in megabytes. Only applicable if kind is "objectstorage". 
 - **bucket_batch_rollover_time_in_ms** : the bucket batch rollover time in milliseconds. Only applicable if kind is "objectstorage". 
@@ -131,6 +136,13 @@ Within the *service_connectors* attribute, use the *target* attribute to define 
 - **function_id**: the target function. Only applicable if kind is "functions". This attribute is overloaded: it can be either a function OCID or a reference (a key) to the function OCID.
 - **log_group_id**: the target log group. Only applicable if kind is "logginganalytics". This attribute is overloaded: it can be either a log group OCID or a reference (a key) to the log group OCID.
 - **compartment_id**: the target resource compartment. Required if using a literal name for bucket_name or a literal OCID for stream_id, topic_id, function_id, or log_group_id. This attribute is overloaded: it can be either a compartment OCID or a reference (a key) to the compartment OCID.
+- **dimensions**: The monitoring dimensions. Only applicable when target kind = "monitoring".
+    - **dimension_name**: Dimension key. A valid dimension key includes only printable ASCII, excluding periods (.) and spaces. Custom dimension keys are acceptable.
+    - **dimension_kind**: The type of dimension value: static or evaluated. Default is "static".
+    - **dimension_path**: The location to use for deriving the dimension value (evaluated). 
+    - **dimension_value**: The data extracted from the specified dimension value (passed as-is).
+- **metric**: Required when kind=monitoring. The name of the metric. Example: CpuUtilization.
+- **metric_namespace**: Required when kind=monitoring. The namespace of the metric. Example: oci_computeagent.
 - **policy_name**: the policy name that is created for allowing service connector to push data to target.
 - **policy_description**: the policy description.
 
