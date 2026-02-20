@@ -5,6 +5,7 @@ variable "tenancy_ocid" {
   description = "The tenancy ocid"
   type        = string
 }
+
 variable "service_connectors_configuration" {
   description = "Service Connectors configuration settings, defining all aspects to manage service connectors and related resources in OCI. Please see the comments within each attribute for details."
 
@@ -22,7 +23,7 @@ variable "service_connectors_configuration" {
       freeform_tags  = optional(map(string)) # the service connector freeform_tags. Default to default_freeform_tags if undefined.
 
       source = object({
-        kind        = string                # Supported sources: "logging" and "streaming".
+        kind        = string                # Supported sources: "logging", "streaming", "monitoring".
         cursor_kind = optional(string)      # The type of cursor, which determines the starting point from which the stream will be consumed. Options "LATEST", "TRIM_HORIZON" (only applicable if kind = "streaming")
         audit_logs = optional(list(object({ # the audit logs (only applicable if kind = "logging").
           cmp_id = string                   # the compartment where to get audit logs from. This attribute is overloaded: it can be either a compartment OCID or a reference (a key) to the compartment OCID. Use "ALL" to include all audit logs in the tenancy.
@@ -33,12 +34,19 @@ variable "service_connectors_configuration" {
           log_id       = optional(string)       # the log. This attribute is overloaded: it can be either a log OCID or a reference (a key) to the log OCID.
         })))
         stream_id = optional(string) # The source stream (only applicable if kind = "streaming"). This attribute is overloaded: it can be either a stream OCID or a reference (a key) to the stream OCID.
+        monitoring = optional(list(object({
+          cmp_id = string # the compartment containing metric namespaces you want to use for the Monitoring source. This attribute is overloaded: it can be either a compartment OCID or a reference (a key) to the compartment OCID.
+          namespaces = list(object({
+            metrics_kind = list(string) # the metrics kind.
+            namespace    = string       # The source service or application to use when querying for metric data points. Must begin with oci_. Example: oci_computeagent
+          }))
+        })))
       })
 
       log_rule_filter = optional(string) # A condition for filtering log data (only applicable if source kind = "logging").
 
       target = object({                                       # the target
-        kind                              = string,           # supported targets: "objectstorage", "streaming", "functions", "logginganalytics", "notifications".
+        kind                              = string,           # supported targets: "objectstorage", "streaming", "functions", "logginganalytics", "notifications", "monitoring".
         bucket_name                       = optional(string), # the target bucket name (only applicable if kind is "objectstorage"). This attribute is overloaded: it can be either a bucket name or a reference (a key) to the bucket name.
         bucket_batch_rollover_size_in_mbs = optional(number), # the bucket batch rollover size in megabytes (only applicable if kind is "objectstorage"). 
         bucket_batch_rollover_time_in_ms  = optional(number), # the bucket batch rollover time in milliseconds (only applicable if kind is "objectstorage"). 
@@ -48,7 +56,15 @@ variable "service_connectors_configuration" {
         topic_id                          = optional(string)  # the target topic (only applicable if kind is "notifications"). This attribute is overloaded: it can be either a topic OCID or a reference (a key) to the topic OCID.
         function_id                       = optional(string)  # the target function (only applicable if kind is "functions"). This attribute is overloaded: it can be either a function OCID or a reference (a key) to the function OCID.
         log_group_id                      = optional(string)  # the target log group (only applicable if kind is "logginganalytics"). This attribute is overloaded: it can be either a log group OCID or a reference (a key) to the log group OCID.
-        compartment_id                    = optional(string), # the target resource compartment. Required if using a literal name for bucket_name or a literal OCID for stream_id, topic_id, function_id, or log_group_id. This attribute is overloaded: it can be either a compartment OCID or a reference (a key) to the compartment OCID.
+        compartment_id                    = optional(string), # the target resource compartment. Required if source=monitoring, or using a literal name for bucket_name or a literal OCID for stream_id, topic_id, function_id, or log_group_id. This attribute is overloaded: it can be either a compartment OCID or a reference (a key) to the compartment OCID.
+        dimensions = optional(list(object({                   # the monitoring dimensions. Only applicable if target kind = "monitoring".
+          dimension_name  = string                            # Dimension key. A valid dimension key includes only printable ASCII, excluding periods (.) and spaces. Custom dimension keys are acceptable. Avoid entering confidential information. Due to use by Connector Hub, the following dimension names are reserved: connectorId, connectorName, connectorSourceType. For information on valid dimension keys and values, see MetricDataDetails Reference. Example: type
+          dimension_kind  = optional(string, "static")        # The type of dimension value: static or evaluated.
+          dimension_path  = optional(string)                  # The location to use for deriving the dimension value (evaluated). The path must start with logContent in an acceptable notation style with supported JMESPath selectors: expression with dot and index operator (. and [])
+          dimension_value = optional(string)                  # The data extracted from the specified dimension value (passed as-is).
+        })))
+        metric           = optional(string) # Required when kind=monitoring. The name of the metric. Example: CpuUtilization
+        metric_namespace = optional(string) # Required when kind=monitoring. The namespace of the metric. Example: oci_computeagent
       })
 
       policy = optional(object({           # If you omit this block in the declaration, the policy compartment_id, name and description are derived from the target.

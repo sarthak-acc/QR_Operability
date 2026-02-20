@@ -1,3 +1,8 @@
+# Release Notes - 0.2.5
+## Updates
+1. [Service Connectors module](./service-connectors/)
+  - Enhancement: Added monitoring as source and target in in service connectors.
+
 # October 10, 2025 Release Notes - 0.2.4
 
 ## Updates
