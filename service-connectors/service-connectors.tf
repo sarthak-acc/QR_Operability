@@ -2,14 +2,15 @@
  * ## CIS Landing Zone Service Connector Hub (SCH) Module.
  *
  * This module manages OCI Service Connector Hub resources. 
- * Supported sources: "logging", "streaming".
- * Supported targets: "objectstorage", "streaming", "functions", "logginganalytics".
+ * Supported sources: "logging", "streaming", "monitoring".
+ * Supported targets: "objectstorage", "streaming", "functions", "logginganalytics", "monitoring".
  * Object Storage buckets are optionally managed. They can be encrypted with either an Oracle managed key or customer managed key.
  * If cis_level = 1, the bucket is encrypted with an Oracle managed key.
  * If cis_level = 2, a customer managed key is required. Write logs are enabled for the bucket only if cis_level = 2.
  * If target.kind is 'streaming, a stream OCID must be provided in target.id parameter.
  * If target.kind is 'functions', a function OCID must be provided in target.id parameter.
  * If target.kind is 'logginganalytics', a log group OCID for Logging Analytics service must be provided in target.id parameter.
+ * If target.kind is 'monitoring', metric and metric_namespace must be provided in target parameters.
  * An IAM policy is created to allow the Service Connector Hub service to push data to the chosen target. 
  */
 
@@ -32,7 +33,7 @@ resource "oci_sch_service_connector" "these" {
       error_message = "VALIDATION FAILURE : \"${each.value.target.kind}\" value is invalid for \"target kind\" attribute in \"${each.key}\" service connector. Valid values are ${join(", ", local.targets)} (case insensitive)."
     }
     precondition {
-      condition     = (lower(each.value.target.kind) == local.TARGET_OBJECT_STORAGE && each.value.target.bucket_name != null) || (lower(each.value.target.kind) == local.TARGET_STREAMING && each.value.target.stream_id != null) || (lower(each.value.target.kind) == local.TARGET_FUNCTIONS && each.value.target.function_id != null) || (lower(each.value.target.kind) == local.TARGET_LOGGING_ANALYTICS && each.value.target.log_group_id != null) || (lower(each.value.target.kind) == local.TARGET_NOTIFICATIONS && each.value.target.topic_id != null)
+      condition     = (lower(each.value.target.kind) == local.TARGET_OBJECT_STORAGE && each.value.target.bucket_name != null) || (lower(each.value.target.kind) == local.TARGET_STREAMING && each.value.target.stream_id != null) || (lower(each.value.target.kind) == local.TARGET_FUNCTIONS && each.value.target.function_id != null) || (lower(each.value.target.kind) == local.TARGET_LOGGING_ANALYTICS && each.value.target.log_group_id != null) || (lower(each.value.target.kind) == local.TARGET_NOTIFICATIONS && each.value.target.topic_id != null) || (lower(each.value.target.kind) == local.TARGET_MONITORING && each.value.target.metric != null && each.value.target.metric_namespace != null)
       error_message = "VALIDATION FAILURE : \"${each.value.target.kind}\" target kind requires a corresponding target resource in \"${each.key}\" service connector. Make sure to set target's attribute \"${local.target_resource_dependencies[each.value.target.kind]}\" with the target resource name (if target is a bucket) or id (if target is not a bucket)."
     }
   }
@@ -70,6 +71,31 @@ resource "oci_sch_service_connector" "these" {
       }
     }
     stream_id = lower(each.value.source.kind) == local.SOURCE_STREAMING ? (length(regexall("^ocid1.*$", each.value.source.stream_id)) > 0 ? each.value.source.stream_id : var.streams_dependency[each.value.source.stream_id].id) : null
+    dynamic "monitoring_sources" {
+      for_each = lower(each.value.source.kind) == local.SOURCE_MONITORING ? each.value.source.monitoring != null ? toset(each.value.source.monitoring) : [] : []
+      iterator = ms
+      content {
+        compartment_id = length(regexall("^ocid1.*$", ms.value.cmp_id)) > 0 ? ms.value.cmp_id : var.compartments_dependency[ms.value.cmp_id].id
+        namespace_details {
+          kind = "selected"
+          dynamic "namespaces" {
+            for_each = ms.value.namespaces != null ? toset(ms.value.namespaces) : []
+            iterator = n
+            content {
+              dynamic "metrics" {
+                for_each = n.value.metrics_kind != null ? toset(n.value.metrics_kind) : []
+                iterator = m
+                content {
+                  kind = m.value
+                }
+              }
+              namespace = n.value.namespace
+            }
+          }
+        }
+      }
+    }
+
   }
   target {
     kind               = lower(each.value.target.kind)
@@ -84,6 +110,25 @@ resource "oci_sch_service_connector" "these" {
     topic_id                   = lower(each.value.target.kind) == local.TARGET_NOTIFICATIONS ? (each.value.target.topic_id != null ? (length(regexall("^ocid1.*$", each.value.target.topic_id)) > 0 ? each.value.target.topic_id : (contains(keys(oci_ons_notification_topic.these), each.value.target.topic_id) ? oci_ons_notification_topic.these[each.value.target.topic_id].id : var.topics_dependency[each.value.target.topic_id].id)) : null) : null
     function_id                = lower(each.value.target.kind) == local.TARGET_FUNCTIONS ? (each.value.target.function_id != null ? (length(regexall("^ocid1.*$", each.value.target.function_id)) > 0 ? each.value.target.function_id : var.functions_dependency[each.value.target.function_id].id) : null) : null
     log_group_id               = lower(each.value.target.kind) == local.TARGET_LOGGING_ANALYTICS ? (each.value.target.log_group_id != null ? (length(regexall("^ocid1.*$", each.value.target.log_group_id)) > 0 ? each.value.target.log_group_id : var.logs_dependency[each.value.target.log_group_id].id) : null) : null
+
+    dynamic "dimensions" {
+      for_each = lower(each.value.target.kind) == local.TARGET_MONITORING ? each.value.target.dimensions != null ? toset(each.value.target.dimensions) : [] : []
+      iterator = d
+      content {
+        dynamic "dimension_value" {
+          for_each = d.value.dimension_value != null ? toset(d.value.dimension_value) : []
+          iterator = dv
+          content {
+            kind  = dv.value.kind
+            path  = dv.value.path # Required when kind=jmesPath.
+            value = dv.value.value
+          }
+        }
+        name = d.value.name
+      }
+    }
+    metric           = lower(each.value.target.kind) == local.TARGET_MONITORING ? each.value.target.metric != null ? each.value.target.metric : null : null
+    metric_namespace = lower(each.value.target.kind) == local.TARGET_MONITORING ? each.value.target.metric_namespace != null ? each.value.target.metric_namespace : null : null
   }
 
   dynamic "tasks" {

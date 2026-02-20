@@ -41,6 +41,13 @@ locals {
           request.principal.type= 'serviceconnector', 
           request.principal.compartment.id='${sc.compartment_id != null ? (length(regexall("^ocid1.*$", sc.compartment_id)) > 0 ? sc.compartment_id : var.compartments_dependency[sc.compartment_id].id) : (length(regexall("^ocid1.*$", var.service_connectors_configuration.default_compartment_id)) > 0 ? var.service_connectors_configuration.default_compartment_id : var.compartments_dependency[var.service_connectors_configuration.default_compartment_id].id)}' }
       EOF  
+      ] : lower(sc.target.kind) == local.TARGET_MONITORING ? [
+      <<EOF
+          Allow any-user to use metrics in compartment id ${sc.target.compartment_id != null ? (length(regexall("^ocid1.*$", sc.target.compartment_id)) > 0 ? sc.target.compartment_id : var.compartments_dependency[sc.target.compartment_id].id) : (sc.compartment_id != null ? (length(regexall("^ocid1.*$", sc.compartment_id)) > 0 ? sc.compartment_id : var.compartments_dependency[sc.compartment_id].id) : (length(regexall("^ocid1.*$", var.service_connectors_configuration.default_compartment_id)) > 0 ? var.service_connectors_configuration.default_compartment_id : var.compartments_dependency[var.service_connectors_configuration.default_compartment_id].id))} where all {
+          request.principal.type='serviceconnector',
+          target.metrics.namespace='${sc.target.metric_namespace}',
+          request.principal.compartment.id='${sc.compartment_id != null ? (length(regexall("^ocid1.*$", sc.compartment_id)) > 0 ? sc.compartment_id : var.compartments_dependency[sc.compartment_id].id) : (length(regexall("^ocid1.*$", var.service_connectors_configuration.default_compartment_id)) > 0 ? var.service_connectors_configuration.default_compartment_id : var.compartments_dependency[var.service_connectors_configuration.default_compartment_id].id)}' }
+      EOF
     ] : []
 
     /* grants = lower(sc.target.kind) == local.TARGET_OBJECT_STORAGE ? [
